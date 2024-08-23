@@ -33,16 +33,7 @@
 - **`!news [categoria]`** - Obtém as últimas notícias de uma categoria específica.
 - **`!traduzir [idioma] [texto]`** - Traduz o texto para o idioma especificado usando uma API de tradução.
 
-## Como Instalar
 
-Clone este repositório:
-    ```bash
-    git clone https://github.com/desire777/yukibot.git
-    ```
-Instale as dependências:
-    ```bash
-    pip install -r requirements.txt
-    ```
 
 ### Considerações
 * Esse bot foi desenvolvido para fins de aprendizado. O bot contém mais alguns comandos e funcionalidades
