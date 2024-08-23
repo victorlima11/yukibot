@@ -14,7 +14,7 @@
 - **`!queue`** - Mostra a fila de músicas.
 
 ### Interação com Imagens
-- **`!randomimage [categoria]`** - Obtém uma imagem aleatória de uma categoria específica usando APIs externas.
+- **`!img [categoria]`** - Obtém uma imagem aleatória de uma categoria específica usando APIs externas.
 - **`!cat`** - Envia uma imagem aleatória de um gato.
 - **`!dog`** - Envia uma imagem aleatória de um cachorro.
 
