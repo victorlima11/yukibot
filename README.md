@@ -23,7 +23,7 @@
 - **`!playergi [uid] [char]`** - Exibe estatísticas detalhadas de personagens de jogos, como HP, ATK, e DEF.
 
 ### Gerenciamento de Servidor
-- **`!mute [usuário] [tempo]`** - Muta um usuário por um período de tempo especificado.
+- **`!mute [usuário]`** - Muta um usuário.
 - **`!unmute [usuário]`** - Desmuta um usuário.
 - **`!kick [usuário]`** - Expulsa um usuário do servidor.
 - **`!ban [usuário]`** - Bane um usuário do servidor.
@@ -31,7 +31,7 @@
 ### Utilidades
 - **`!weather [cidade]`** - Mostra o clima atual para a cidade especificada usando uma API de clima.
 - **`!news [categoria]`** - Obtém as últimas notícias de uma categoria específica.
-- **`!translate [texto] [idioma]`** - Traduz o texto para o idioma especificado usando uma API de tradução.
+- **`!traduzir [idioma] [texto]`** - Traduz o texto para o idioma especificado usando uma API de tradução.
 
 ## Como Instalar
 
