@@ -16,7 +16,6 @@
 ### Interação com Imagens
 - **`!img [categoria]`** - Obtém uma imagem aleatória de uma categoria específica usando APIs externas.
 - **`!cat`** - Envia uma imagem aleatória de um gato.
-- **`!dog`** - Envia uma imagem aleatória de um cachorro.
 
 ### Informações de Personagens(Genshin Impact)
 - **`!char [uid] [char]`** - Mostra detalhes sobre um personagem específico, incluindo imagem, raridade e habilidades.
@@ -30,7 +29,6 @@
 
 ### Utilidades
 - **`!weather [cidade]`** - Mostra o clima atual para a cidade especificada usando uma API de clima.
-- **`!news [categoria]`** - Obtém as últimas notícias de uma categoria específica.
 - **`!traduzir [idioma] [texto]`** - Traduz o texto para o idioma especificado usando uma API de tradução.
 
 
