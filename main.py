@@ -3,19 +3,20 @@ from discord.ext import commands
 from config import TOKEN
 import json
 import os
-from admin_commands import kick, ban, clear, unban, mute, unmute, lock, unlock, add_role, remove_role, nick
-from user_commands import ping, invite, somar, dividir, subtrair, multiplicar, say, nrandom, hug, slap, kiss, coinflip
-from utility_commands import traduzir, cat, img
-from info_commands import info, userinfo, serverinfo, avatar
-from weather_commands import clima
-from waifu_commands import waifu
-from genshin_commands import playergi, char, chars
-from slash_infoCommands import *
-from slash_userCommands import *
-from slash_adminCommands import *
-from slash_waifuCommands import *
-from slash_utilityCommands import *
-from slash_watherCommands import*
+from typed.admin_commands import kick, ban, clear, unban, mute, unmute, lock, unlock, add_role, remove_role, nick
+from typed.user_commands import ping, invite, somar, dividir, subtrair, multiplicar, say, nrandom, hug, slap, kiss, coinflip
+from typed.utility_commands import traduzir, cat, img
+from typed.info_commands import info, userinfo, serverinfo, avatar
+from typed.weather_commands import clima
+from typed.waifu_commands import waifu
+from typed.genshin_commands import playergi, char, chars
+from typed.img_commands import invert
+from slash.slash_infoCommands import *
+from slash.slash_userCommands import *
+from slash.slash_adminCommands import *
+from slash.slash_waifuCommands import *
+from slash.slash_utilityCommands import *
+from slash.slash_watherCommands import*
 
 intents = discord.Intents.default()
 intents.members = True
@@ -155,6 +156,7 @@ bot.add_command(commands.Command(char, name='char', description='Mostra as infor
 bot.add_command(commands.Command(nick, name='nick', description='Altera o apelido de um usuário.'))
 bot.add_command(commands.Command(coinflip, name='coinflip', description='Gira uma moeda.'))
 bot.add_command(commands.Command(avatar, name='avatar', description='Mostra o avatar de um usuário.'))
+bot.add_command(commands.Command(invert, name='invert', description='Inverte a imagem enviada.'))
 
 
 
