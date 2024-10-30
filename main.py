@@ -10,7 +10,7 @@ from typed.info_commands import info, userinfo, serverinfo, avatar
 from typed.weather_commands import clima
 from typed.waifu_commands import waifu
 from typed.genshin_commands import playergi, char, chars
-from typed.img_commands import invertx, inverty, grayscale, text
+from typed.img_commands import invertx, inverty, grayscale, text, blur
 from slash.slash_infoCommands import *
 from slash.slash_userCommands import *
 from slash.slash_adminCommands import *
@@ -160,6 +160,7 @@ bot.add_command(commands.Command(invertx, name='invertx', description='Inverte a
 bot.add_command(commands.Command(inverty, name='inverty', description='Inverte a imagem enviada no eixo y.'))
 bot.add_command(commands.Command(grayscale, name='grayscale', description='Deixe uma imagem em preto e branco.'))
 bot.add_command(commands.Command(text, name='text', description='Adiciona texto à imagem.'))
+bot.add_command(commands.Command(blur, name='blur', description='Borra a imagem'))
 
 
 

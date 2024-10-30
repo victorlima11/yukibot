@@ -3,7 +3,7 @@ from discord.ext import commands
 import cv2
 import numpy as np
 import io
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 
 intents = discord.Intents.default()
@@ -156,3 +156,43 @@ async def text(ctx, *, texto: str = "Texto de Exemplo"):
 
     await ctx.reply(embed=embed, file=discord.File(io.BytesIO(image_binary), filename="imagem_com_texto.png"))
 
+async def blur(ctx, intensity: float = 5.0):  # O valor padrão é 5.0
+    if not ctx.message.attachments:
+        await ctx.send(f"{ctx.author.mention} Por favor, envie uma imagem.", delete_after=5)
+        return
+
+    attachment = ctx.message.attachments[0]
+
+    if not attachment.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        await ctx.send(f"{ctx.author.mention} Por favor, envie um arquivo de imagem válido (png, jpg, jpeg).", delete_after=5)
+        return
+
+    try:
+        # Limitar o valor de intensidade entre 0 e 20
+        if intensity < 0:
+            intensity = 0
+        elif intensity > 20:
+            intensity = 20
+
+        image_data = await attachment.read()
+        image = Image.open(io.BytesIO(image_data))
+
+        # Aplicar desfoque com a intensidade especificada
+        blurred_image = image.filter(ImageFilter.GaussianBlur(radius=intensity))
+
+        with io.BytesIO() as image_binary:
+            blurred_image.save(image_binary, format='PNG')
+            image_binary.seek(0)
+
+            embed = discord.Embed(
+                title="Aqui está sua imagem desfocada!",
+                color=discord.Color.blue()
+            )
+            embed.set_image(url="attachment://imagem_blur.png")
+            embed.set_footer(text=f"Solicitado por {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+
+            # Enviar o embed com a imagem
+            await ctx.reply(embed=embed, file=discord.File(fp=image_binary, filename="imagem_blur.png"))
+
+    except Exception as e:
+        await ctx.send(f"Ocorreu um erro: {str(e)}", delete_after=5)
