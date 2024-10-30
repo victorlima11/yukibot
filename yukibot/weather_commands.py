@@ -24,7 +24,11 @@ async def clima(ctx, *, city: str = None):
                     temp = data['main']['temp']
                     feels_like = data['main']['feels_like']
                     humidity = data['main']['humidity']
-                    wind_speed = data['wind']['speed']
+                    wind_speed_mps = data['wind']['speed']
+
+                    wind_speed_kmph = wind_speed_mps * 3.6
+
+
                     embed = discord.Embed(
                         title=f'Clima em {city.capitalize()}',
                         color=0x87CEEB
@@ -33,7 +37,7 @@ async def clima(ctx, *, city: str = None):
                     embed.add_field(name='Temperatura', value=f'{temp}°C', inline=True)
                     embed.add_field(name='Sensação Térmica', value=f'{feels_like}°C', inline=True)
                     embed.add_field(name='Umidade', value=f'{humidity}%', inline=True)
-                    embed.add_field(name='Velocidade do Vento', value=f'{wind_speed} m/s', inline=True)
+                    embed.add_field(name='Velocidade do Vento', value=f'{wind_speed_kmph:.2f} km/h', inline=True)
                     embed.set_footer(text='Dados fornecido por OpenWeather API ☁️')
                     await ctx.send(embed=embed)
                 else:

@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
 from config import TOKEN
+import json
+import os
 from admin_commands import kick, ban, clear, unban, mute, unmute, lock, unlock, add_role, remove_role, nick
 from user_commands import ping, invite, somar, dividir, subtrair, multiplicar, say, nrandom, hug, slap, kiss, coinflip
 from utility_commands import traduzir, cat, img
-from info_commands import info, userinfo, serverinfo
-from music_commands import play, skip, queue, stop, leave
+from info_commands import info, userinfo, serverinfo, avatar
 from weather_commands import clima
 from waifu_commands import waifu
 from genshin_commands import playergi, char, chars
@@ -22,26 +23,100 @@ intents.messages = True
 intents.message_content = True
 
 
+
+
+
+
+
+
+
 bot = commands.Bot(command_prefix="!", intents=intents)
+
 bot.remove_command('help')
 
 @bot.command(name='help', description='Mostra ajuda sobre os comandos do bot')
 async def help(ctx):
-    embed = discord.Embed(title='Ajuda do Bot', description='Lista de comandos do bot', color=0x00ff00)
-
-    comandos = [
-        ('Admin', ['kick', 'ban', 'clear', 'unban', 'mute', 'unmute', 'lock', 'unlock', 'add_role', 'remove_role', 'nick']),
-        ('Usuário', ['ping', 'invite', 'say', 'hug', 'slap', 'kiss']),
-        ('Utilidade', ['clima', 'traduzir', 'cat', 'somar', 'dividir', 'subtrair', 'multiplicar', 'random']),
-        ('Informação', ['info', 'userinfo', 'serverinfo']),
-        ('Música', ['play', 'skip', 'queue', 'stop', 'leave']),
-        ('Genshin',  ['playergi', 'char', 'chars'])
-    ]
-
-    for categoria, comandos_categoria in comandos:
-        embed.add_field(name=categoria, value=', '.join(comandos_categoria), inline=False)
+    embed = discord.Embed(
+        title='Ajuda do Bot',
+        description='Para ver a lista completa de comandos do bot, por favor visite o seguinte site:',
+        color=0x00ff00
+    )
+    embed.add_field(
+        name='Lista de Comandos',
+        value='[Clique aqui para ver os comandos](https://yukibot.squareweb.app/#comandos)',
+        inline=False
+    )
 
     await ctx.send(embed=embed)
+
+
+def load_autoroles():
+    if os.path.exists("autoroles.json"):
+        with open("autoroles.json", "r") as file:
+            return json.load(file)
+    return {}
+
+def save_autoroles(autoroles):
+    with open("autoroles.json", "w") as file:
+        json.dump(autoroles, file, indent=4)
+
+
+autoroles = load_autoroles()
+
+@bot.event
+async def on_member_join(member):
+    guild_id = str(member.guild.id)
+    if guild_id in autoroles:
+        roles = autoroles[guild_id]
+        for role_id in roles:
+            role = member.guild.get_role(int(role_id))
+            if role:
+                try:
+                    await member.add_roles(role)
+                    print(f"Role {role.name} added to {member.name}")
+                except discord.Forbidden:
+                    print(f"Missing permissions to add role {role.name} to {member.name}")
+                except Exception as e:
+                    print(f"Failed to add role {role.name} to {member.name}: {e}")
+
+@bot.command(name="autorole_add")
+@commands.has_permissions(administrator=True)
+async def autorole_add(ctx, role: discord.Role):
+    guild_id = str(ctx.guild.id)
+    if guild_id not in autoroles:
+        autoroles[guild_id] = []
+    if str(role.id) not in autoroles[guild_id]:
+        autoroles[guild_id].append(str(role.id))
+        save_autoroles(autoroles)
+        await ctx.send(f"O cargo: {role.name} foi adicionado ao autorole.")
+    else:
+        await ctx.send(f"O cargo: {role.name} já está no autorole.")
+
+
+@bot.command(name="autorole_remove")
+@commands.has_permissions(administrator=True)
+async def autorole_remove(ctx, role: discord.Role):
+    guild_id = str(ctx.guild.id)
+    if guild_id in autoroles and str(role.id) in autoroles[guild_id]:
+        autoroles[guild_id].remove(str(role.id))
+        if not autoroles[guild_id]:
+            del autoroles[guild_id]
+        save_autoroles(autoroles)
+        await ctx.send(f"O cargo: {role.name} foi removido do autorole.")
+    else:
+        await ctx.send(f"O cargo {role.name} não está no autorole.")
+
+
+@bot.command(name="autorole_list")
+async def autorole_list(ctx):
+    guild_id = str(ctx.guild.id)
+    if guild_id in autoroles and autoroles[guild_id]:
+        role_names = [ctx.guild.get_role(int(role_id)).name for role_id in autoroles[guild_id]]
+        await ctx.send(f"Lista de autoroles do servidor: {', '.join(role_names)}")
+    else:
+        await ctx.send("O servidor não tem autoroles ativos.")
+
+
 
 
 
@@ -68,11 +143,6 @@ bot.add_command(commands.Command(add_role, name='add_role', description='Adicion
 bot.add_command(commands.Command(remove_role, name='remove_role', description='Remove um cargo de um membro do servidor'))
 bot.add_command(commands.Command(say, name='say', description='Faz com que o bot diga uma frase'))
 bot.add_command(commands.Command(nrandom, name='nrandom', description='Gera um número aleatório'))
-bot.add_command(commands.Command(play, name='play', description='Toca uma música'))
-bot.add_command(commands.Command(skip, name='skip', description='Pula a música atual'))
-bot.add_command(commands.Command(queue, name='queue', description='Mostra a fila de músicas'))
-bot.add_command(commands.Command(stop, name='stop', description='Para a música atual'))
-bot.add_command(commands.Command(leave, name='leave', description='Deixa a sala de música'))
 bot.add_command(commands.Command(hug, name='hug', description='Dá em abraço algum membro'))
 bot.add_command(commands.Command(kiss, name='kiss', description='Dá um beijo em algum membro'))
 bot.add_command(commands.Command(slap, name='slap', description='Dar um tapa em algum usuário'))
@@ -84,6 +154,8 @@ bot.add_command(commands.Command(chars, name='chars', description='Lista os pers
 bot.add_command(commands.Command(char, name='char', description='Mostra as informações de um char.'))
 bot.add_command(commands.Command(nick, name='nick', description='Altera o apelido de um usuário.'))
 bot.add_command(commands.Command(coinflip, name='coinflip', description='Gira uma moeda.'))
+bot.add_command(commands.Command(avatar, name='avatar', description='Mostra o avatar de um usuário.'))
+
 
 
 
@@ -110,7 +182,6 @@ async def sync_commands(guild_id=None):
         bot.tree.add_command(app_commands.Command(name='kick', description='Expulsar um membro do servidor', callback=slash_kick))
         bot.tree.add_command(app_commands.Command(name='ban', description='Banir um membro do servidor por menção ou ID', callback=slash_ban))
         bot.tree.add_command(app_commands.Command(name='clear', description='Limpar mensagens do servidor', callback=slash_clear))
-        bot.tree.add_command(app_commands.Command(name='unban', description='Desbanir um membro do servidor', callback=slash_unban))
         bot.tree.add_command(app_commands.Command(name='mute', description='Muta um membro no servidor', callback=slash_mute))
         bot.tree.add_command(app_commands.Command(name='unmute', description='Desmuta um membro no servidor', callback=slash_unmute))
         bot.tree.add_command(app_commands.Command(name='lock', description='Bloqueia o canal atual', callback=slash_lock))
@@ -145,7 +216,6 @@ async def sync_commands(guild_id=None):
         bot.tree.add_command(app_commands.Command(name='kick', description='Expulsar um membro do servidor', callback=slash_kick))
         bot.tree.add_command(app_commands.Command(name='ban', description='Banir um membro do servidor por menção ou ID', callback=slash_ban))
         bot.tree.add_command(app_commands.Command(name='clear', description='Limpar mensagens do servidor', callback=slash_clear))
-        bot.tree.add_command(app_commands.Command(name='unban', description='Desbanir um membro do servidor', callback=slash_unban))
         bot.tree.add_command(app_commands.Command(name='mute', description='Muta um membro no servidor', callback=slash_mute))
         bot.tree.add_command(app_commands.Command(name='unmute', description='Desmuta um membro no servidor', callback=slash_unmute))
         bot.tree.add_command(app_commands.Command(name='lock', description='Bloqueia o canal atual', callback=slash_lock))
@@ -158,6 +228,9 @@ async def sync_commands(guild_id=None):
         bot.tree.add_command(app_commands.Command(name='cat', description='Gera a imagem de um gato', callback=slash_cat))
         bot.tree.add_command(app_commands.Command(name='traduzir', description='Traduz um texto para outro idioma', callback=slash_traduzir))
         bot.tree.add_command(app_commands.Command(name='coinflip', description='Gira uma moeda', callback=slash_coinflip))
+        bot.tree.add_command(app_commands.Command(name='avatar', description='Mostrar o avatar de um usuário', callback=slash_avatar))
+
+
 
         await bot.tree.sync()
         print("Comandos sincronizados globalmente.")
@@ -175,6 +248,7 @@ async def on_ready():
 async def on_guild_join(guild):
     print(f'Joined a new guild: {guild.name} (ID: {guild.id})')
     await sync_commands(guild_id=guild.id)
+
 
 bot.run(TOKEN)
 

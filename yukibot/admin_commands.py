@@ -20,42 +20,50 @@ async def kick(ctx, member: discord.Member, *, reason=None):
 
 async def ban(ctx, member: discord.Member = None, user_id: int = None, *, reason=None):
     """Banir um membro do servidor por menção ou ID."""
-    if member is None:
-        await ctx.send("Você precisa mencionar um membro para baní-lo. Exemplo: `!ban @Usuário [motivo]`")
+    if member is None and user_id is None:
+        await ctx.send("Você precisa mencionar um membro ou fornecer um ID para baní-lo. Exemplo: `!ban @Usuário [motivo]`", delete_after=5)
+        return
+
     if ctx.author.guild_permissions.administrator:
         if user_id is not None:
             try:
                 user = await bot.fetch_user(user_id)
                 member = discord.utils.get(ctx.guild.members, id=user_id)
                 if member is None:
-                    await ctx.send('Usuário não encontrado no servidor.')
+                    await ctx.send('Usuário não encontrado no servidor.', delete_after=5)
                     return
             except discord.NotFound:
-                await ctx.send('Usuário não encontrado.')
+                await ctx.send('Usuário não encontrado.', delete_after=5)
                 return
             except discord.HTTPException as e:
-                await ctx.send(f'Erro ao buscar usuário: {e}')
+                await ctx.send(f'Erro ao buscar usuário: {e}', delete_after=5)
                 return
         
         if member is None:
-            await ctx.send('Membro não encontrado.')
+            await ctx.send('Membro não encontrado.', delete_after=5)
             return
-        
+
+        # Verifica se o cargo do autor é superior ao do membro
+        if member.top_role >= ctx.author.top_role:
+            await ctx.send(f"Você não pode banir {member.mention}, pois eles têm um cargo igual ou superior ao seu.", delete_after=5)
+            return
+
         await member.ban(reason=reason)
-        await ctx.send(f'{member.mention} foi banido do servidor.')
+        await ctx.send(f'{member.mention} foi banido do servidor por: {reason if reason else "nenhum motivo especificado"}.', delete_after=10)
     else:
-        await ctx.send(f"{ctx.author.mention} Você não tem permissão para usar este comando.", delete_after=5)
+        await ctx.send(f"{ctx.author.mention}, você não tem permissão para usar este comando.", delete_after=5)
+
 
 async def clear(ctx, amount: int):
     """Limpar mensagens do servidor."""
     if ctx.author.guild_permissions.administrator:
         if amount <= 0:
-            await ctx.send("Você deve fornecer um número positivo de mensagens para limpar.")
+            await ctx.send("Você deve fornecer um número positivo de mensagens para limpar.", hidden=True)
             return
-        await ctx.channel.purge(limit=amount)
-        await ctx.send(f'{amount} mensagens limpas.', delete_after=5)
+        deleted = await ctx.channel.purge(limit=amount)
+        await ctx.send(f'{len(deleted)} mensagens limpas.', delete_after=5, hidden=True)
     else:
-        await ctx.send(f"{ctx.author.mention} Você não tem permissão para usar este comando.", delete_after=5)
+        await ctx.send(f"{ctx.author.mention} Você não tem permissão para usar este comando.", delete_after=5, hidden=True)
     
 async def unban(ctx, member:discord.User, *, reason=None):
     if member is None:
@@ -136,37 +144,44 @@ async def unlock(ctx):
 
 async def add_role(ctx, member: discord.Member = None, role: discord.Role = None):
     """Adiciona um cargo ao membro."""
-    if member is None or role is None:
-        await ctx.send("Você precisa mencionar um usuário e um cargo válido. Exemplo: `!add_role @Usuário @Cargo`")
-        return
+    if ctx.author.guild_permissions.administrator:
+      if member is None or role is None:
+          await ctx.send("Você precisa mencionar um usuário e um cargo válido. Exemplo: `!add_role @Usuário @Cargo`")
+          return
+  
+      if role not in ctx.guild.roles:
+          await ctx.send(f"O cargo '{role.name}' não existe no servidor.")
+          return
+  
+      if member not in ctx.guild.members:
+          await ctx.send(f"O membro {member.mention} não foi encontrado no servidor.")
+          return
 
-    if role not in ctx.guild.roles:
-        await ctx.send(f"O cargo '{role.name}' não existe no servidor.")
-        return
-
-    if member not in ctx.guild.members:
-        await ctx.send(f"O membro {member.mention} não foi encontrado no servidor.")
-        return
-
-    await member.add_roles(role)
-    await ctx.send(f"{member.mention} agora possui o cargo {role.name}.")
+      await member.add_roles(role)
+      await ctx.send(f"{member.mention} agora possui o cargo {role.name}.")
+    else:
+      await ctx.send("Você não tem permissão para usar esse comando", delete_after=5)
+      
     
 async def remove_role(ctx, member: discord.Member = None, role: discord.Role = None):
     """Remove um cargo do membro."""
-    if member is None or role is None:
-        await ctx.send("Você precisa mencionar um usuário e um cargo válido. Exemplo: `!remove_role @Usuário @Cargo`")
-        return
-
-    if role not in ctx.guild.roles:
-        await ctx.send(f"O cargo '{role.name}' não existe no servidor.")
-        return
-
-    if member not in ctx.guild.members:
-        await ctx.send(f"O membro {member.mention} não foi encontrado no servidor.")
-        return
-
-    await member.remove_roles(role)
-    await ctx.send(f"O cargo {role.name} foi removido de {member.mention}.")
+    if ctx.author.guild_permissions.administrator:
+      if member is None or role is None:
+          await ctx.send("Você precisa mencionar um usuário e um cargo válido. Exemplo: `!remove_role @Usuário @Cargo`")
+          return
+  
+      if role not in ctx.guild.roles:
+          await ctx.send(f"O cargo '{role.name}' não existe no servidor.")
+          return
+  
+      if member not in ctx.guild.members:
+          await ctx.send(f"O membro {member.mention} não foi encontrado no servidor.")
+          return
+  
+      await member.remove_roles(role)
+      await ctx.send(f"O cargo {role.name} foi removido de {member.mention}.")
+    else:
+      await ctx.send("Você não tem permissão para usar esse comando", delete_after=5)
 
 
 async def nick(ctx, member: discord.Member = None, *, nickname: str = None):
@@ -187,3 +202,4 @@ async def nick(ctx, member: discord.Member = None, *, nickname: str = None):
             await ctx.send("Eu não tenho permissão para alterar o apelido desse usuário.")
         except discord.HTTPException as e:
             await ctx.send(f"Ocorreu um erro ao tentar alterar o apelido: {e}")
+

@@ -13,54 +13,45 @@ async def slash_kick(interaction: discord.Interaction, member: discord.Member, r
     else:
         await interaction.response.send_message(f"{interaction.user.mention} Você não tem permissão para usar este comando.", delete_after=5)
 
-async def slash_ban(interaction: discord.Interaction, member: discord.Member = None, user_id: int = None, reason: str = None):
-    """Banir um membro do servidor por menção ou ID."""
+
+async def slash_ban(interaction: discord.Interaction, member: discord.Member, reason: str = None):
+    """Banir um membro do servidor por menção."""
     if interaction.user.guild_permissions.administrator:
-        if member is None and user_id is not None:
-            try:
-                user = await bot.fetch_user(user_id)
-                member = discord.utils.get(interaction.guild.members, id=user_id)
-                if member is None:
-                    await interaction.response.send_message('Usuário não encontrado no servidor.')
-                    return
-            except discord.NotFound:
-                await interaction.response.send_message('Usuário não encontrado.')
-                return
-            except discord.HTTPException as e:
-                await interaction.response.send_message(f'Erro ao buscar usuário: {e}')
-                return
-        
         if member is None:
-            await interaction.response.send_message('Membro não encontrado.')
+            await interaction.response.send_message('Membro não encontrado.', ephemeral=True)
             return
         
-        await member.ban(reason=reason)
-        await interaction.response.send_message(f'{member.mention} foi banido do servidor.')
+        # Verifica se o cargo do autor é superior ao do membro
+        if member.top_role >= interaction.user.top_role:
+            await interaction.response.send_message(f"Você não pode banir {member.mention}, pois eles têm um cargo igual ou superior ao seu.", ephemeral=True)
+            return
+
+        try:
+            await member.ban(reason=reason)
+            await interaction.response.send_message(f'{member.mention} foi banido do servidor.', ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message(f'Erro ao banir o usuário: {e}', ephemeral=True)
     else:
-        await interaction.response.send_message(f"{interaction.user.mention} Você não tem permissão para usar este comando.", delete_after=5)
+        await interaction.response.send_message(f"{interaction.user.mention}, você não tem permissão para usar este comando.", ephemeral=True)
+
 
 async def slash_clear(interaction: discord.Interaction, amount: int):
     """Limpar mensagens do servidor."""
     if interaction.user.guild_permissions.administrator:
         if amount <= 0:
-            await interaction.response.send_message("Você deve fornecer um número positivo de mensagens para limpar.")
+            await interaction.response.send_message("Você deve fornecer um número positivo de mensagens para limpar.", ephemeral=True)
             return
+        
+        # Enviar uma resposta inicial informando que o comando foi recebido
+        await interaction.response.send_message(f'Quantidade de mensagens limpas: {amount}', ephemeral=True)
+        
+        # Limpar mensagens
         await interaction.channel.purge(limit=amount)
-        await interaction.response.send_message(f'{amount} mensagens limpas.', delete_after=5)
     else:
-        await interaction.response.send_message(f"{interaction.user.mention} Você não tem permissão para usar este comando.", delete_after=5)
-    
-async def slash_unban(interaction: discord.Interaction, user_id: int, reason: str = None):
-    """Desbanir um membro do servidor."""
-    if interaction.user.guild_permissions.administrator:
-        try:
-            user = await bot.fetch_user(user_id)
-            await interaction.guild.unban(user, reason=reason)
-            await interaction.response.send_message(f"{user.mention} foi desbanido. Motivo: {reason if reason else 'Não fornecido.'}", delete_after=5)
-        except discord.NotFound:
-            await interaction.response.send_message("Usuário não encontrado.", delete_after=5)
-    else:
-        await interaction.response.send_message(f"{interaction.user.mention} Você não tem permissão para usar este comando", delete_after=5)
+        await interaction.response.send_message(f"{interaction.user.mention} Você não tem permissão para usar este comando.", ephemeral=True)
+
+
+
 
 async def slash_mute(interaction: discord.Interaction, member: discord.Member = None, reason: str = None):
     """Muta um membro no servidor."""
@@ -127,34 +118,60 @@ async def slash_unlock(interaction: discord.Interaction):
 
 async def slash_add_role(interaction: discord.Interaction, member: discord.Member = None, role: discord.Role = None):
     """Adiciona um cargo ao membro."""
-    if member is None or role is None:
-        await interaction.response.send_message("Você precisa mencionar um usuário e um cargo válido. Exemplo: `/add_role @Usuário @Cargo`")
-        return
+    if interaction.user.guild_permissions.administrator:
+      if member is None or role is None:
+          await interaction.response.send_message("Você precisa mencionar um usuário e um cargo válido. Exemplo: `/add_role @Usuário @Cargo`")
+          return
+  
+      if role not in interaction.guild.roles:
+          await interaction.response.send_message(f"O cargo '{role.name}' não existe no servidor.")
+          return
+  
+      if member not in interaction.guild.members:
+          await interaction.response.send_message(f"O membro {member.mention} não foi encontrado no servidor.")
+          return
 
-    if role not in interaction.guild.roles:
-        await interaction.response.send_message(f"O cargo '{role.name}' não existe no servidor.")
-        return
-
-    if member not in interaction.guild.members:
-        await interaction.response.send_message(f"O membro {member.mention} não foi encontrado no servidor.")
-        return
-
-    await member.add_roles(role)
-    await interaction.response.send_message(f"{member.mention} agora possui o cargo {role.name}.")
+      await member.add_roles(role)
+      await interaction.response.send_message(f"{member.mention} agora possui o cargo {role.name}.")
+    else:
+      await interaction.response.send_message("Você não tem permissão para adicionar roles.")
+    
     
 async def slash_remove_role(interaction: discord.Interaction, member: discord.Member = None, role: discord.Role = None):
     """Remove um cargo do membro."""
-    if member is None or role is None:
-        await interaction.response.send_message("Você precisa mencionar um usuário e um cargo válido. Exemplo: `/remove_role @Usuário @Cargo`")
-        return
+    if interaction.user.guild_permissions.administrator:
+      if member is None or role is None:
+          await interaction.response.send_message("Você precisa mencionar um usuário e um cargo válido. Exemplo: `/remove_role @Usuário @Cargo`")
+          return
+  
+      if role not in interaction.guild.roles:
+          await interaction.response.send_message(f"O cargo '{role.name}' não existe no servidor.")
+          return
+  
+      if member not in interaction.guild.members:
+          await interaction.response.send_message(f"O membro {member.mention} não foi encontrado no servidor.")
+          return
 
-    if role not in interaction.guild.roles:
-        await interaction.response.send_message(f"O cargo '{role.name}' não existe no servidor.")
-        return
+      await member.remove_roles(role)
+      await interaction.response.send_message(f"O cargo {role.name} foi removido de {member.mention}.")
+    else:
+      await interaction.response.send_message("Você não tem permissão para remover roles.")
 
-    if member not in interaction.guild.members:
-        await interaction.response.send_message(f"O membro {member.mention} não foi encontrado no servidor.")
-        return
+async def slash_banner(interaction: discord.Interaction, member: discord.Member = None):
+    """Pega o banner de um usuário do Discord."""
+    if member is None:
+        member = interaction.user
 
-    await member.remove_roles(role)
-    await interaction.response.send_message(f"O cargo {role.name} foi removido de {member.mention}.")
+    user_id = member.id
+    try:
+        # Pega o banner do usuário
+        user = await bot.fetch_user(user_id)
+        banner_url = user.banner.url if user.banner else None
+        if banner_url:
+            await interaction.response.send_message(f'O banner de {member.mention} é: {banner_url}')
+        else:
+            await interaction.response.send_message(f'{member.mention} não tem um banner.')
+    except discord.NotFound:
+        await interaction.response.send_message('Usuário não encontrado.')
+    except discord.HTTPException as e:
+        await interaction.response.send_message(f'Erro ao buscar banner: {e}')
