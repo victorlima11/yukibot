@@ -3,6 +3,8 @@ from discord.ext import commands
 from config import TOKEN
 import json
 import os
+from autoroles import AutoRole, save_autorole, load_autorole, remove_autorole
+from db import create_db, get_session
 from typed.admin_commands import kick, ban, clear, unban, mute, unmute, lock, unlock, add_role, remove_role, nick
 from typed.user_commands import ping, invite, somar, dividir, subtrair, multiplicar, say, nrandom, hug, slap, kiss, coinflip
 from typed.utility_commands import traduzir, cat, img
@@ -18,17 +20,11 @@ from slash.slash_waifuCommands import *
 from slash.slash_utilityCommands import *
 from slash.slash_watherCommands import*
 
+
 intents = discord.Intents.default()
 intents.members = True
 intents.messages = True
 intents.message_content = True
-
-
-
-
-
-
-
 
 
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -50,75 +46,69 @@ async def help(ctx):
 
     await ctx.send(embed=embed)
 
-
-def load_autoroles():
-    if os.path.exists("autoroles.json"):
-        with open("autoroles.json", "r") as file:
-            return json.load(file)
-    return {}
-
-def save_autoroles(autoroles):
-    with open("autoroles.json", "w") as file:
-        json.dump(autoroles, file, indent=4)
-
-
-autoroles = load_autoroles()
-
 @bot.event
 async def on_member_join(member):
-    guild_id = str(member.guild.id)
-    if guild_id in autoroles:
-        roles = autoroles[guild_id]
-        for role_id in roles:
-            role = member.guild.get_role(int(role_id))
-            if role:
+    """Evento disparado quando um novo membro entra no servidor"""
+    session = get_session()
+    autoroles_data = session.query(AutoRole).filter(AutoRole.guild_id == str(member.guild.id)).first()
+
+    if autoroles_data:
+        role_ids = autoroles_data.role_ids.split(",")
+        roles = [discord.utils.get(member.guild.roles, id=int(role_id)) for role_id in role_ids]
+
+        for role in roles:
+            if role and role.position < member.guild.me.top_role.position:
                 try:
                     await member.add_roles(role)
-                    print(f"Role {role.name} added to {member.name}")
                 except discord.Forbidden:
-                    print(f"Missing permissions to add role {role.name} to {member.name}")
+                    (f"Permissão negada para atribuir o cargo {role.name} ao membro {member.name}")
                 except Exception as e:
-                    print(f"Failed to add role {role.name} to {member.name}: {e}")
+                    print(f"Erro ao adicionar o cargo {role.name}: {e}")
+            else:
+                print(f"O bot não tem permissão para atribuir o cargo {role.name}")
 
-@bot.command(name="autorole_add")
-@commands.has_permissions(administrator=True)
+
+@bot.command()
 async def autorole_add(ctx, role: discord.Role):
-    guild_id = str(ctx.guild.id)
-    if guild_id not in autoroles:
-        autoroles[guild_id] = []
-    if str(role.id) not in autoroles[guild_id]:
-        autoroles[guild_id].append(str(role.id))
-        save_autoroles(autoroles)
-        await ctx.send(f"O cargo: {role.name} foi adicionado ao autorole.")
-    else:
-        await ctx.send(f"O cargo: {role.name} já está no autorole.")
+    """Adiciona um cargo ao autorole de uma guilda"""
+    guild_id = str(ctx.guild.id)  
+    role_ids = str(role.id)  
+    save_autorole(guild_id, role_ids)
+    await ctx.send(f'O cargo {role.name} foi adicionado ao autorole da guilda {ctx.guild.name}!')
 
-
-@bot.command(name="autorole_remove")
-@commands.has_permissions(administrator=True)
+@bot.command()
 async def autorole_remove(ctx, role: discord.Role):
+    """Remove um cargo do autorole de uma guilda"""
     guild_id = str(ctx.guild.id)
-    if guild_id in autoroles and str(role.id) in autoroles[guild_id]:
-        autoroles[guild_id].remove(str(role.id))
-        if not autoroles[guild_id]:
-            del autoroles[guild_id]
-        save_autoroles(autoroles)
-        await ctx.send(f"O cargo: {role.name} foi removido do autorole.")
+    role_ids = str(role.id)
+    if remove_autorole(guild_id, role_ids):
+        await ctx.send(f'O cargo {role.name} foi removido do autorole da guilda {ctx.guild.name}.')
     else:
-        await ctx.send(f"O cargo {role.name} não está no autorole.")
+        await ctx.send(f'O cargo {role.name} não foi encontrado no autorole da guilda {ctx.guild.name}.')
 
-
-@bot.command(name="autorole_list")
-async def autorole_list(ctx):
+@bot.command()
+async def autorole_get(ctx):
+    """Obtém os cargos configurados para autorole"""
     guild_id = str(ctx.guild.id)
-    if guild_id in autoroles and autoroles[guild_id]:
-        role_names = [ctx.guild.get_role(int(role_id)).name for role_id in autoroles[guild_id]]
-        await ctx.send(f"Lista de autoroles do servidor: {', '.join(role_names)}")
+    roles = load_autorole(guild_id)
+    
+    if roles:
+        roles_list = [f"<@&{role_id}>" for role_id in roles.split(",")]
+        await ctx.send(f'Os cargos configurados para autorole nesta guilda são: {", ".join(roles_list)}')
     else:
-        await ctx.send("O servidor não tem autoroles ativos.")
+        await ctx.send("Nenhum cargo foi configurado para autorole nesta guilda.")
 
-
-
+@bot.command()
+async def autoroles_list(ctx):
+    """Lista os cargos configurados para autorole de uma guilda"""
+    guild_id = str(ctx.guild.id)
+    roles = load_autorole(guild_id)
+    
+    if roles:
+        roles_list = [f"<@&{role_id}>" for role_id in roles.split(",")]
+        await ctx.send(f'Os cargos configurados para autorole nesta guilda são: {", ".join(roles_list)}')
+    else:
+        await ctx.send("Nenhum cargo foi configurado para autorole nesta guilda.")
 
 
 bot.add_command(commands.Command(kick, name='kick', description='Expulsa  um membro do servidor'))
