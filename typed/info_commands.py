@@ -47,7 +47,7 @@ async def info(ctx):
     )
     embed.add_field(name="Fui desenvolvida para facilitar algumas funções.", value="Use !help para conhecer os comandos", inline=False)
     embed.set_image(url="https://i.pinimg.com/originals/c1/fe/ff/c1feff7a3960d75cb225160587b45ca6.gif")
-    embed.add_field(name="Criado por:", value="[Nyuh999](https://github.com/desire777)", inline=False)
+    embed.add_field(name="Criado por:", value="[kyoto333](https://github.com/victorlima11)", inline=False)
     embed.add_field(name="Site:", value="[YukiBot](https://yukibot.squareweb.app/#inicio)", inline=False)
     embed.set_footer(text="Obrigado por usar o bot!")
     await ctx.send(embed=embed)
